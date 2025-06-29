@@ -1,89 +1,318 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { reservas as datosIniciales } from '../data/reservasData';
-import ModalEliminar from '../components/ModalEliminar';
-import ModalActualizar from '../components/ModalActualizar';
-import ModalImprimir from '../components/ModalImprimir';
 import './AdminPage.css';
-import '../components/Modal.css';
 
 const AdminPage = () => {
   const navigate = useNavigate();
-  const [search, setSearch] = useState('');
-  const [datos, setDatos] = useState(datosIniciales);
-  const [showEliminar, setShowEliminar] = useState(false);
-  const [showActualizar, setShowActualizar] = useState(false);
-  const [showImprimir, setShowImprimir] = useState(false);
-  const [reservaActualizar, setReservaActualizar] = useState(null);
-  const [selectedId, setSelectedId] = useState(null);
+  const [currentDate, setCurrentDate] = useState(new Date('2025-06-27'));
+  const [selectedDate, setSelectedDate] = useState('2025-06-27');
+  const [reservas, setReservas] = useState({});
+  const [showModal, setShowModal] = useState(false);
+  const [modalType, setModalType] = useState(''); // 'create', 'edit', 'delete'
+  const [currentReserva, setCurrentReserva] = useState(null);
+  const [formData, setFormData] = useState({
+    mesa: '',
+    hora: '',
+    cliente: '',
+    comensales: ''
+  });
 
-  const eliminarReserva = (id) => {
-    setDatos(prev => prev.filter(r => r.id !== parseInt(id)));
-    setShowEliminar(false);
-    setSelectedId(null);
+  // Datos iniciales 
+  useEffect(() => {
+    setReservas({
+      '2025-06-27': [
+        { id: 1, mesa: 1, hora: '15:00', cliente: 'Pedro', comensales: 2 },
+        { id: 2, mesa: 2, hora: '15:00', cliente: 'Juan', comensales: 5 },
+        { id: 3, mesa: 3, hora: '15:00', cliente: 'Ana', comensales: 3 }
+      ]
+    });
+  }, []);
+
+  const generateCalendar = () => {
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
+    
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    
+    const startDay = firstDay.getDay() === 0 ? 6 : firstDay.getDay() - 1;
+    const daysInMonth = lastDay.getDate();
+    
+    const prevMonthLastDay = new Date(year, month, 0).getDate();
+    
+    const weeks = [];
+    let day = 1;
+    let nextMonthDay = 1;
+    
+    for (let i = 0; i < 6; i++) {
+      const days = [];
+      
+      for (let j = 0; j < 7; j++) {
+        if (i === 0 && j < startDay) {
+          days.push(prevMonthLastDay - (startDay - j - 1));
+        } else if (day > daysInMonth) {
+          days.push(nextMonthDay++);
+        } else {
+          days.push(day++);
+        }
+      }
+      
+      if (i > 0 && days[0] > daysInMonth) break;
+      weeks.push(days);
+    }
+    
+    return weeks;
   };
 
-  const buscarReserva = (id) => {
-    const r = datos.find(r => r.id === parseInt(id));
-    if (r) {
-      setReservaActualizar(r);
+  const handleDateClick = (day) => {
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth() + 1;
+    const formattedDate = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+    setSelectedDate(formattedDate);
+  };
+
+  const openModal = (type, reserva = null) => {
+    setModalType(type);
+    setCurrentReserva(reserva);
+    
+    if (type === 'edit' && reserva) {
+      setFormData({
+        mesa: reserva.mesa,
+        hora: reserva.hora,
+        cliente: reserva.cliente,
+        comensales: reserva.comensales
+      });
+    } else if (type === 'create') {
+      setFormData({
+        mesa: '',
+        hora: '',
+        cliente: '',
+        comensales: ''
+      });
+    }
+    
+    setShowModal(true);
+  };
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    
+    if (modalType === 'create') {
+      const newReserva = {
+        id: Date.now(), // ID temporal
+        mesa: parseInt(formData.mesa),
+        hora: formData.hora,
+        cliente: formData.cliente,
+        comensales: parseInt(formData.comensales)
+      };
+      
+      setReservas(prev => ({
+        ...prev,
+        [selectedDate]: [...(prev[selectedDate] || []), newReserva]
+      }));
+    } else if (modalType === 'edit' && currentReserva) {
+      setReservas(prev => ({
+        ...prev,
+        [selectedDate]: prev[selectedDate].map(r => 
+          r.id === currentReserva.id ? { ...r, ...formData } : r
+        )
+      }));
+    }
+    
+    setShowModal(false);
+  };
+
+  const handleDelete = () => {
+    if (currentReserva) {
+      setReservas(prev => ({
+        ...prev,
+        [selectedDate]: prev[selectedDate].filter(r => r.id !== currentReserva.id)
+      }));
+      setShowModal(false);
     }
   };
 
-  const actualizarReserva = (reservaActualizada) => {
-    setDatos(prev => prev.map(r => r.id === reservaActualizada.id ? reservaActualizada : r));
-    setShowActualizar(false);
-    setReservaActualizar(null);
-  };
-
-  const filtered = datos.filter(r =>
-    r.nombre.toLowerCase().includes(search.toLowerCase()) ||
-    r.email.toLowerCase().includes(search.toLowerCase()) ||
-    r.telefono.includes(search) ||
-    r.id.toString().includes(search)
-  );
+  const weeks = generateCalendar();
 
   return (
-    <div className="admin-page">
-      <div className="navbar">
-        <span>Reservas</span>
+    <div className="admin-container">
+      <div className="admin-header">
+        <h1>Calendario de Reservas (Vista Administrador)</h1>
         <button onClick={() => navigate('/')}>Cerrar Sesión</button>
       </div>
-
-      <input className="search" placeholder="BUSCAR" value={search} onChange={e => setSearch(e.target.value)} />
-
-      <div className="table">
-        <div className="header">
-          <span>ID</span><span>NOMBRE</span><span>F. LLEGADA</span><span>H. LLEGADA</span>
-          <span>PERSONAS</span><span>EMAIL</span><span>TELEFONOS</span><span>NOTAS</span>
+      
+      <div className="calendar-container">
+        <div className="calendar-header">
+          <div>LUN</div>
+          <div>MAR</div>
+          <div>MIÉ</div>
+          <div>JUE</div>
+          <div>VIE</div>
+          <div>SÁB</div>
+          <div>DOM</div>
         </div>
-        {filtered.map(r => (
-          <div
-            className={`row ${selectedId === r.id ? 'selected-row' : ''}`}
-            key={r.id}
-            onClick={() => setSelectedId(r.id)}
-          >
-            <span>{r.id}</span>
-            <span>{r.nombre}</span>
-            <span>{r.fechaLlegada}</span>
-            <span>{r.horaLlegada}</span>
-            <span>{r.personas}</span>
-            <span>{r.email}</span>
-            <span>{r.telefono}</span>
-            <span>{r.notas}</span>
+        
+        {weeks.map((week, i) => (
+          <div key={i} className="calendar-week">
+            {week.map((day, j) => {
+              const isCurrentMonth = !((i === 0 && day > 7) || (i >= 4 && day < 7));
+              const dayClass = isCurrentMonth ? 'calendar-day' : 'calendar-day other-month';
+              
+              return (
+                <div 
+                  key={j} 
+                  className={dayClass}
+                  onClick={() => isCurrentMonth && handleDateClick(day)}
+                >
+                  {day}
+                </div>
+              );
+            })}
           </div>
         ))}
       </div>
-
-      <div className="buttons">
-        <button className="blue" onClick={() => setShowEliminar(true)}>Eliminar</button>
-        <button className="blue" onClick={() => setShowActualizar(true)}>Actualizar</button>
-        <button className="blue" onClick={() => setShowImprimir(true)}>Imprimir</button>
+      
+      <div className="reservas-container">
+        <div className="reservas-header">
+          <h2>Reservas para {selectedDate}</h2>
+          <button 
+            className="add-reserva-btn"
+            onClick={() => openModal('create')}
+          >
+            Nueva Reserva
+          </button>
+        </div>
+        
+        {reservas[selectedDate]?.length > 0 ? (
+          <div className="reservas-list">
+            {reservas[selectedDate].map((reserva) => (
+              <div key={reserva.id} className="reserva-item">
+                <div className="reserva-info">
+                  <span>Mesa {reserva.mesa} — {reserva.hora}</span>
+                  <span>{reserva.cliente} ({reserva.comensales} personas)</span>
+                </div>
+                <div className="reserva-actions">
+                  <button 
+                    className="edit-btn"
+                    onClick={() => openModal('edit', reserva)}
+                  >
+                    Editar
+                  </button>
+                  <button 
+                    className="delete-btn"
+                    onClick={() => openModal('delete', reserva)}
+                  >
+                    Eliminar
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p>No hay reservas para esta fecha.</p>
+        )}
       </div>
-
-      <ModalEliminar visible={showEliminar} onClose={() => setShowEliminar(false)} onDelete={eliminarReserva} />
-      <ModalActualizar visible={showActualizar} onClose={() => { setShowActualizar(false); setReservaActualizar(null); }} onBuscar={buscarReserva} reserva={reservaActualizar} onActualizar={actualizarReserva} />
-      <ModalImprimir visible={showImprimir} onClose={() => setShowImprimir(false)} data={datos} />
+      
+      {/* Modal */}
+      {showModal && (
+        <div className="modal-overlay">
+          <div className="modal">
+            <div className="modal-header">
+              <h3>
+                {modalType === 'create' && 'Nueva Reserva'}
+                {modalType === 'edit' && 'Editar Reserva'}
+                {modalType === 'delete' && 'Confirmar Eliminación'}
+              </h3>
+              <button 
+                className="close-modal"
+                onClick={() => setShowModal(false)}
+              >
+                &times;
+              </button>
+            </div>
+            
+            <div className="modal-body">
+              {modalType === 'delete' ? (
+                <div>
+                  <p>¿Estás seguro de eliminar la reserva de {currentReserva?.cliente}?</p>
+                  <div className="modal-actions">
+                    <button className="cancel-btn" onClick={() => setShowModal(false)}>
+                      Cancelar
+                    </button>
+                    <button className="confirm-delete-btn" onClick={handleDelete}>
+                      Eliminar
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <form onSubmit={handleSubmit}>
+                  <div className="form-group">
+                    <label>Mesa:</label>
+                    <input
+                      type="number"
+                      name="mesa"
+                      value={formData.mesa}
+                      onChange={handleInputChange}
+                      required
+                    />
+                  </div>
+                  
+                  <div className="form-group">
+                    <label>Hora:</label>
+                    <input
+                      type="time"
+                      name="hora"
+                      value={formData.hora}
+                      onChange={handleInputChange}
+                      required
+                    />
+                  </div>
+                  
+                  <div className="form-group">
+                    <label>Cliente:</label>
+                    <input
+                      type="text"
+                      name="cliente"
+                      value={formData.cliente}
+                      onChange={handleInputChange}
+                      required
+                    />
+                  </div>
+                  
+                  <div className="form-group">
+                    <label>Comensales:</label>
+                    <input
+                      type="number"
+                      name="comensales"
+                      value={formData.comensales}
+                      onChange={handleInputChange}
+                      required
+                    />
+                  </div>
+                  
+                  <div className="form-actions">
+                    <button 
+                      type="button" 
+                      className="cancel-btn"
+                      onClick={() => setShowModal(false)}
+                    >
+                      Cancelar
+                    </button>
+                    <button type="submit" className="confirm-btn">
+                      {modalType === 'create' ? 'Crear' : 'Actualizar'}
+                    </button>
+                  </div>
+                </form>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

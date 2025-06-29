@@ -1,48 +1,249 @@
-.admin-page {
-  background: #f3f3f3;
-  min-height: 100vh;
-  padding: 30px;
-  font-family: sans-serif;
+/* AdminPage.css */
+.admin-container {
+  font-family: Arial, sans-serif;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+  position: relative;
 }
-.navbar {
-  background: black;
-  color: #00aaff;
-  padding: 10px 20px;
+
+.admin-header {
   display: flex;
   justify-content: space-between;
-  border-radius: 10px 10px 0 0;
+  align-items: center;
+  margin-bottom: 30px;
+}
+
+.admin-header h1 {
+  margin: 0;
+  font-size: 24px;
+  color: #333;
+}
+
+.admin-header button {
+  background-color: #f44336;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
   font-weight: bold;
 }
-.search {
-  margin: 10px 0;
-  padding: 5px;
-  width: 150px;
+
+.calendar-container {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  overflow: hidden;
+  margin-bottom: 30px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
-.table {
-  border: 1px solid black;
-}
-.table .header, .table .row {
+
+.calendar-header {
   display: grid;
-  grid-template-columns: repeat(8, 1fr);
-  border-bottom: 1px solid black;
+  grid-template-columns: repeat(7, 1fr);
+  background-color: #f5f5f5;
+  font-weight: bold;
   text-align: center;
-  padding: 5px 0;
+  padding: 10px 0;
 }
-.buttons {
+
+.calendar-week {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+}
+
+.calendar-day {
+  padding: 15px;
+  text-align: center;
+  border: 1px solid #eee;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.calendar-day:hover {
+  background-color: #f0f0f0;
+}
+
+.calendar-day.other-month {
+  color: #aaa;
+  background-color: #fafafa;
+}
+
+.reservas-container {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.reservas-header {
   display: flex;
   justify-content: space-between;
-  margin-top: 20px;
-  width: 300px;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #eee;
 }
-button.blue {
-  background: #00aaff;
+
+.reservas-header h2 {
+  margin: 0;
+  font-size: 20px;
+  color: #333;
+}
+
+.add-reserva-btn {
+  background-color: #4CAF50;
   color: white;
-  padding: 5px 10px;
   border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.reservas-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.reserva-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px;
+  border-radius: 4px;
+  background-color: #f9f9f9;
+  border: 1px solid #eee;
+}
+
+.reserva-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.reserva-info span:first-child {
+  font-weight: bold;
+}
+
+.reserva-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.edit-btn {
+  background-color: #2196F3;
+  color: white;
+  border: none;
+  padding: 6px 12px;
   border-radius: 4px;
   cursor: pointer;
 }
 
-.selected-row {
-  background-color: #ffcccc;
+.delete-btn {
+  background-color: #f44336;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+/* Modal Styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0,0,0,0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal {
+  background-color: white;
+  border-radius: 8px;
+  width: 100%;
+  max-width: 500px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  border-bottom: 1px solid #eee;
+}
+
+.modal-header h3 {
+  margin: 0;
+  font-size: 20px;
+}
+
+.close-modal {
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: #666;
+}
+
+.modal-body {
+  padding: 16px;
+}
+
+.form-group {
+  margin-bottom: 16px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: bold;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  box-sizing: border-box;
+}
+
+.form-actions, .modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 24px;
+}
+
+.cancel-btn {
+  background-color: #f5f5f5;
+  color: #333;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.confirm-btn {
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.confirm-delete-btn {
+  background-color: #f44336;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
 }
